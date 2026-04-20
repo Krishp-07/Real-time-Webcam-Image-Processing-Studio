@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-time Image Processing Studio </title>
+  <style>
+    :root {
+      --bg: #0e0f14;
+      --panel: #13141c;
+      --card: #1a1b26;
+      --border: #252635;
+      --accent: #4f9cf9;
+      --accent2: #7c5cbf;
+      --text: #e2e4f0;
+      --muted: #6b7280;
+      --green: #34d399;
+      --red: #f87171;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Layout ── */
+    .app {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      padding: 0;
+      overflow-y: auto;
+    }
+
+    .main {
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar-header {
+      padding: 18px 16px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-header h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+    }
+
+    .sidebar-header p {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .filter-group {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .group-title {
+      padding: 10px 16px 6px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .unit-badge {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 9px;
+      padding: 1px 5px;
+      color: var(--accent);
+    }
+
+    .filter-btn {
+      width: 100%;
+      text-align: left;
+      padding: 8px 16px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.12s;
+      border-left: 2px solid transparent;
+    }
+
+    .filter-btn:hover {
+      background: var(--card);
+      color: var(--text);
+    }
+
+    .filter-btn.active {
+      background: rgba(79, 156, 249, 0.08);
+      color: var(--accent);
+      border-left-color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* ── Top Bar ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .topbar h1 {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .topbar h1 span {
+      color: var(--accent);
+    }
+
+    .topbar p {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 8px 18px;
+      font-size: 13px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+
+    .btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #000;
+      font-weight: 600;
+    }
+
+    .btn.primary:hover {
+      opacity: 0.85;
+    }
+
+    .btn.danger {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .btn.danger:hover {
+      background: rgba(248, 113, 113, 0.08);
+    }
+
+    /* ── Feed Grid ── */
+    .feeds {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .feed-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .feed-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .feed-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .live-dot {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--red);
+    }
+
+    .dot.active {
+      animation: pulse 1.2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.3
+      }
+    }
+
+    .feed-body {
+      position: relative;
+      background: #000;
+      aspect-ratio: 4/3;
+    }
+
+    .feed-body video,
+    .feed-body canvas,
+    .feed-body img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .feed-body .overlay-badge {
+      position: absolute;
+      bottom: 8px;
+      right: 10px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 5px;
+      letter-spacing: 0.06em;
+    }
+
+    .badge-python {
+      background: rgba(124, 92, 191, 0.85);
+      color: #e0d4ff;
+    }
+
+    .badge-opencv {
+      background: rgba(79, 156, 249, 0.85);
+      color: #cce4ff;
+    }
+
+    .nocam-msg {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 20px;
+    }
+
+    /* ── Stats ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 5px;
+    }
+
+    .stat-val {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .stat-val.sm {
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    /* ── Histograms ── */
+    .hists {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .hist-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .hist-card canvas {
+      width: 100%;
+      height: 70px;
+      display: block;
+    }
+
+    .hist-label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 8px;
+    }
+
+    /* ── Params Panel ── */
+    .params-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+
+    .params-title {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 12px;
+    }
+
+    .param-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .param-row label {
+      font-size: 12px;
+      color: var(--muted);
+      min-width: 110px;
+    }
+
+    .param-row input[type=range] {
+      flex: 1;
+      accent-color: var(--accent);
+    }
+
+    .param-row span {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      min-width: 36px;
+      text-align: right;
+    }
+
+    .no-params {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* ── Status Bar ── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+
+    .status-dot.ok {
+      background: var(--green);
+    }
+
+    .status-dot.err {
+      background: var(--red);
+    }
+
+    /* ── FPS Chart ── */
+    .fps-bar {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+
+    .fps-fill {
+      height: 100%;
+      background: var(--green);
+      border-radius: 2px;
+      transition: width 0.3s;
+    }
+
+    @media(max-width: 900px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .feeds,
+      .stats,
+      .hists {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- ── Sidebar ── -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>Filter Library</h2>
+        <p>Click to apply </p>
+      </div>
+
+      <div class="filter-group">
+        <div class="group-title">Enhancement</div>
+        <button class="filter-btn active" data-filter="Original">Original</button>
+        <button class="filter-btn" data-filter="Grayscale">Grayscale</button>
+        <button class="filter-btn" data-filter="Negative">Negative</button>
+        <button class="filter-btn" data-filter="Contrast Stretch">Contrast Stretch</button>
+        <button class="filter-btn" data-filter="Sepia">Sepia</button>
+        <button class="filter-btn" data-filter="Threshold">Threshold</button>
+        <button class="filter-btn" data-filter="Gray Slicing">Gray Level Slicing</button>
+        <button class="filter-btn" data-filter="Gamma Correct">Power Law (Gamma)</button>
+        <button class="filter-btn" data-filter="Hist Equalize">Histogram Equalization</button>
+        <button class="filter-btn" data-filter="Sharpen">Sharpening</button>
+        <button class="filter-btn" data-filter="Smooth">Smoothing</button>
+        <button class="filter-btn" data-filter="Median Filter">Median Filter</button>
+        <button class="filter-btn" data-filter="Emboss">Emboss</button>
+        <button class="filter-btn" data-filter="Pencil Sketch">Pencil Sketch</button>
+      </div>
+
+      <div class="filter-group">
+        <div class="group-title">Edge Detection</div>
+        <button class="filter-btn" data-filter="Sobel">Sobel Operator</button>
+        <button class="filter-btn" data-filter="Robert">Robert Cross</button>
+        <button class="filter-btn" data-filter="Prewitt">Prewitt Operator</button>
+        <button class="filter-btn" data-filter="Laplacian">Laplacian</button>
+        <button class="filter-btn" data-filter="Canny">Canny (cv2)</button>
+        <button class="filter-btn" data-filter="LoG">LoG (Laplacian of Gaussian)</button>
+      </div>
+
+      <div class="filter-group">
+        <div class="group-title">Morphology</div>
+        <button class="filter-btn" data-filter="Dilation">Dilation</button>
+        <button class="filter-btn" data-filter="Erosion">Erosion</button>
+        <button class="filter-btn" data-filter="Opening">Opening</button>
+        <button class="filter-btn" data-filter="Closing">Closing</button>
+        <button class="filter-btn" data-filter="Boundary">Boundary Extraction</button>
+        <button class="filter-btn" data-filter="Skeleton">Skeletonization</button>
+      </div>
+
+      <div class="filter-group">
+        <div class="group-title">Segmentation</div>
+        <button class="filter-btn" data-filter="Otsu">Otsu Threshold</button>
+        <button class="filter-btn" data-filter="Binary Seg">Binary Segmentation</button>
+        <button class="filter-btn" data-filter="Color Quant">Color Quantization</button>
+        <button class="filter-btn" data-filter="Region Growing">Region Growing</button>
+      </div>
+    </div>
+
+    <!-- ── Main Content ── -->
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <h1>Webcam Processing <span>Studio</span></h1>
+          <p>Real-time processing &nbsp;</p>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" id="startBtn">&#9654; Start Camera</button>
+          <button class="btn danger" id="stopBtn" style="display:none">&#9632; Stop</button>
+          <button class="btn" id="snapBtn">&#128247; Save Frame</button>
+        </div>
+      </div>
+
+      <div class="status-bar">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Camera off — click Start Camera to begin</span>
+      </div>
+
+      <!-- Feeds -->
+      <div class="feeds">
+        <div class="feed-card">
+          <div class="feed-header">
+            <span class="feed-title">Original Feed</span>
+            <div class="live-dot">
+              <div class="dot" id="liveDot"></div><span id="liveLabel">OFF</span>
+            </div>
+          </div>
+          <div class="feed-body">
+            <video id="video" autoplay playsinline muted></video>
+            <div class="nocam-msg" id="nocamMsg">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#4b5563" stroke-width="1.5">
+                <path d="M23 7l-7 5 7 5V7z" />
+                <rect x="1" y="5" width="15" height="14" rx="2" />
+              </svg>
+              <span>Start camera to see live feed</span>
+            </div>
+            <span class="overlay-badge badge-opencv">WebCam</span>
+          </div>
+        </div>
+        <div class="feed-card">
+          <div class="feed-header">
+            <span class="feed-title" id="outTitle">Processed Output</span>
+            <span style="font-size:11px;color:var(--accent)">
+          </div>
+          <div class="feed-body">
+            <img id="outImg" src="" alt="" style="display:none">
+            <div class="nocam-msg" id="outMsg">Apply a filter after starting camera</div>
+            <span class="overlay-badge badge-python">Python</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats">
+        <div class="stat-card">
+          <div class="stat-label">Processing FPS</div>
+          <div class="stat-val" id="fpsVal">0</div>
+          <div class="fps-bar">
+            <div class="fps-fill" id="fpsFill" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Active Filter</div>
+          <div class="stat-val sm" id="filterVal">Original</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Resolution</div>
+          <div class="stat-val" id="resVal">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Frames Sent</div>
+          <div class="stat-val" id="frameVal">0</div>
+        </div>
+      </div>
+
+      <!-- Histograms -->
+      <div class="hists">
+        <div class="hist-card">
+          <div class="hist-label">Input Histogram</div>
+          <canvas id="histIn" height="70"></canvas>
+        </div>
+        <div class="hist-card">
+          <div class="hist-label">Output Histogram</div>
+          <canvas id="histOut" height="70"></canvas>
+        </div>
+      </div>
+
+      <!-- Parameters -->
+      <div class="params-card">
+        <div class="params-title">Filter Parameters</div>
+        <div id="paramsArea">
+          <p class="no-params">No adjustable parameters for the selected filter.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const PARAMS_DEF = {
+      'Threshold': [{ id: 'thresh', label: 'Threshold', min: 0, max: 255, val: 128, step: 1 }],
+      'Gray Slicing': [{ id: 'lo', label: 'Low', min: 0, max: 200, val: 80, step: 1 },
+      { id: 'hi', label: 'High', min: 50, max: 255, val: 180, step: 1 }],
+      'Gamma Correct': [{ id: 'gamma', label: 'Gamma', min: 1, max: 30, val: 10, step: 1, scale: 0.1, fmt: v => (v / 10).toFixed(1) }],
+      'Contrast Stretch': [{ id: 'lo', label: 'Low', min: 0, max: 127, val: 30, step: 1 },
+      { id: 'hi', label: 'High', min: 128, max: 255, val: 220, step: 1 }],
+      'Sharpen': [{ id: 'strength', label: 'Strength', min: 1, max: 20, val: 10, step: 1, scale: 0.1, fmt: v => (v / 10).toFixed(1) }],
+      'Smooth': [{ id: 'ksize', label: 'Kernel size', min: 1, max: 9, val: 5, step: 2 }],
+      'Median Filter': [{ id: 'ksize', label: 'Kernel size', min: 3, max: 11, val: 5, step: 2 }],
+      'Canny': [{ id: 'low', label: 'Low thresh', min: 0, max: 150, val: 50, step: 1 },
+      { id: 'high', label: 'High thresh', min: 50, max: 255, val: 150, step: 1 }],
+      'LoG': [{ id: 'sigma', label: 'Sigma ×10', min: 5, max: 30, val: 20, step: 1, scale: 0.1, fmt: v => (v / 10).toFixed(1) }],
+      'Dilation': [{ id: 'ksize', label: 'Kernel', min: 1, max: 5, val: 2, step: 1 }],
+      'Erosion': [{ id: 'ksize', label: 'Kernel', min: 1, max: 5, val: 2, step: 1 }],
+      'Opening': [{ id: 'ksize', label: 'Kernel', min: 1, max: 5, val: 2, step: 1 }],
+      'Closing': [{ id: 'ksize', label: 'Kernel', min: 1, max: 5, val: 2, step: 1 }],
+      'Binary Seg': [{ id: 'thresh', label: 'Threshold', min: 0, max: 255, val: 128, step: 1 }],
+      'Color Quant': [{ id: 'levels', label: 'Levels', min: 2, max: 16, val: 4, step: 1 }],
+      'Region Growing': [{ id: 'seed', label: 'Seed X %', min: 0, max: 100, val: 50, step: 1, scale: 0.01, fmt: v => v + '%' },
+      { id: 'tol', label: 'Tolerance', min: 1, max: 80, val: 20, step: 1 }],
+    };
+
+    let activeFilter = 'Original';
+    let stream = null, rafId = null;
+    let frameCount = 0, fpsCount = 0, fpsTimer = performance.now();
+    let processing = false;
+
+    const video = document.getElementById('video');
+    const outImg = document.getElementById('outImg');
+    const outMsg = document.getElementById('outMsg');
+
+    /* ── Filter selection ── */
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        activeFilter = b.dataset.filter;
+        document.getElementById('filterVal').textContent = activeFilter;
+        document.getElementById('outTitle').textContent = activeFilter + ' — Output';
+        renderParams();
+      });
+    });
+
+    function renderParams() {
+      const defs = PARAMS_DEF[activeFilter];
+      const area = document.getElementById('paramsArea');
+      if (!defs) { area.innerHTML = '<p class="no-params">No adjustable parameters for this filter.</p>'; return; }
+      area.innerHTML = defs.map(p => `
+    <div class="param-row">
+      <label>${p.label}</label>
+      <input type="range" id="pp_${p.id}" min="${p.min}" max="${p.max}" value="${p.val}" step="${p.step || 1}"
+        oninput="document.getElementById('ppv_${p.id}').textContent=${p.fmt ? `(${p.fmt.toString()})(+this.value)` : 'this.value'}">
+      <span id="ppv_${p.id}">${p.fmt ? p.fmt(p.val) : p.val}</span>
+    </div>`).join('');
+    }
+    renderParams();
+
+    function getParams() {
+      const defs = PARAMS_DEF[activeFilter] || [];
+      const out = {};
+      defs.forEach(p => {
+        const el = document.getElementById('pp_' + p.id);
+        if (el) out[p.id] = p.scale ? parseFloat(el.value) * p.scale : parseInt(el.value);
+      });
+      return out;
+    }
+
+    /* ── Camera ── */
+    document.getElementById('startBtn').addEventListener('click', async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 }, audio: false });
+        video.srcObject = stream;
+        await video.play();
+        document.getElementById('nocamMsg').style.display = 'none';
+        document.getElementById('liveDot').classList.add('active');
+        document.getElementById('liveLabel').textContent = 'LIVE';
+        document.getElementById('startBtn').style.display = 'none';
+        document.getElementById('stopBtn').style.display = '';
+        setStatus('ok', 'Camera live — processing frames with Python/OpenCV');
+        loop();
+      } catch (e) {
+        setStatus('err', 'Camera access denied — allow permission and retry');
+        alert('Camera access denied. Please allow camera permission in your browser.');
+      }
+    });
+
+    document.getElementById('stopBtn').addEventListener('click', () => {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      if (rafId) cancelAnimationFrame(rafId);
+      stream = null; rafId = null;
+      document.getElementById('liveDot').classList.remove('active');
+      document.getElementById('liveLabel').textContent = 'OFF';
+      document.getElementById('startBtn').style.display = '';
+      document.getElementById('stopBtn').style.display = 'none';
+      document.getElementById('nocamMsg').style.display = 'flex';
+      document.getElementById('fpsVal').textContent = '0';
+      setStatus('', 'Camera stopped');
+    });
+
+    document.getElementById('snapBtn').addEventListener('click', () => {
+      const src = outImg.src;
+      if (!src || src === window.location.href) return;
+      const a = document.createElement('a');
+      a.download = 'frame_' + activeFilter.replace(/\s+/g, '_') + '.jpg';
+      a.href = src; a.click();
+    });
+
+    /* ── Processing Loop ── */
+    const tmpCanvas = document.createElement('canvas');
+    const tmpCtx = tmpCanvas.getContext('2d');
+
+    function loop() {
+      rafId = requestAnimationFrame(loop);
+      if (!video.videoWidth || processing) return;
+      tmpCanvas.width = video.videoWidth;
+      tmpCanvas.height = video.videoHeight;
+      tmpCtx.drawImage(video, 0, 0);
+      const frame = tmpCanvas.toDataURL('image/jpeg', 0.7);
+      processing = true;
+
+      fetch('/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filter: activeFilter, params: getParams(), frame })
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.result) {
+            outImg.src = data.result;
+            outImg.style.display = 'block';
+            outMsg.style.display = 'none';
+            drawHist(data.hist_in, 'histIn');
+            drawHist(data.hist_out, 'histOut');
+            document.getElementById('resVal').textContent = data.width + '×' + data.height;
+          }
+          frameCount++; fpsCount++;
+          const now = performance.now();
+          if (now - fpsTimer > 600) {
+            const fps = Math.round(fpsCount / ((now - fpsTimer) / 1000));
+            document.getElementById('fpsVal').textContent = fps;
+            document.getElementById('fpsFill').style.width = Math.min(fps / 30 * 100, 100) + '%';
+            document.getElementById('frameVal').textContent = frameCount;
+            fpsTimer = now; fpsCount = 0;
+          }
+          processing = false;
+        })
+        .catch(() => { processing = false; });
+    }
+
+    /* ── Histogram ── */
+    function drawHist(data, canvasId) {
+      if (!data) return;
+      const hc = document.getElementById(canvasId);
+      hc.width = hc.offsetWidth || 300;
+      const ctx = hc.getContext('2d');
+      ctx.clearRect(0, 0, hc.width, 70);
+      const bw = hc.width / data.length;
+      data.forEach((v, i) => {
+        const h = (v / 100) * 62;
+        ctx.fillStyle = i < data.length / 3 ? '#4f9cf9' : i < 2 * data.length / 3 ? '#7c5cbf' : '#34d399';
+        ctx.fillRect(Math.round(i * bw), 70 - h, Math.max(1, Math.ceil(bw) - 1), h);
+      });
+    }
+
+    function setStatus(type, msg) {
+      const dot = document.getElementById('statusDot');
+      const text = document.getElementById('statusText');
+      dot.className = 'status-dot' + (type ? ' ' + type : '');
+      text.textContent = msg;
+    }
+  </script>
+</body>
+
+</html>
